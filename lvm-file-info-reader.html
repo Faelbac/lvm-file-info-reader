@@ -1,0 +1,70 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+
+<dom-module id="lvm-file-info-reader">
+  <template>
+    <style>
+      :host {
+        display: none;
+      }
+    </style>
+    
+    <iron-ajax id="ajax" handle-as="text" on-response="_extractContents"></iron-ajax>
+
+  </template>
+
+  <script>
+    /**
+     * `lvm-file-info-reader`
+     * Reads .LVM files and returns info.
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class LvmFileInfoReader extends Polymer.Element {
+      static get is() { return 'lvm-file-info-reader'; }
+      static get properties() {
+        return {
+          lvmFileUrl: {
+            type: String,
+            observer: "_getFile",
+            value: ''
+          },
+          info: {
+            type:Object,
+            notify: true,
+            value: {}
+          }
+        }
+      };
+
+      constructor() {
+        super();
+      };
+
+      _getFile(lvmFileUrl) {
+        if (lvmFileUrl && lvmFileUrl.length > 0) {
+          this.$.ajax.url = lvmFileUrl;
+          this.$.ajax.generateRequest();
+        }
+      }
+
+      _extractContents(e){
+        let resp = e.detail.response;
+        let infoTemp = { filePath: this.lvmFileUrl };
+        let infoArray = ["Operator", "Date", "Channels"];
+        for (let j=0; j<=infoArray.length-1; j++){
+          let fieldName = infoArray[j];
+          let remainder = resp.substr(resp.search(fieldName));
+          let value = remainder.slice(remainder.search("\t")+1, remainder.search("\n")-1)
+          value = value.toLowerCase();
+          infoTemp[fieldName] = value;
+        }
+        this.info = infoTemp;
+      }
+
+    }
+    window.customElements.define(LvmFileInfoReader.is, LvmFileInfoReader);
+  </script>
+</dom-module>
